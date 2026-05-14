@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBP 每日食堂與團購 🍽️🛒</title>
+    <style>
+        /* 奶茶色系配色 */
+        :root {
+            --bg-color: #F4EBE4;       /* 淺奶黃/米白 */
+            --card-bg: #FFFFFF;
+            --primary-color: #C0B0A2;  /* 深奶茶/線條 */
+            --accent-color: #EBD8C9;   /* 柔和主色/按鈕 */
+            --text-color: #5A5048;     /* 深褐文字 */
+            --active-color: #E6DEDC;   /* 已認領/已滿額灰色感 */
+            --progress-bar: #D9C5B2;   /* 進度條顏色 */
+        }
+
+        body {
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 2rem;
+        }
+
+        /* 分頁切換按鈕 */
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: var(--card-bg);
+            padding: 6px;
+            border-radius: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--accent-color);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 24px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-radius: 25px;
+            color: var(--text-color);
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        .page {
+            display: none;
+            max-width: 1000px;
+            width: 100%;
+            gap: 20px;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        /* 通用卡片樣式 */
+        .panel {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--accent-color);
+        }
+
+        /* 每日菜單專用樣式 */
+        .menu-list { flex: 1; }
+        .detail-panel { flex: 2; }
+        
+        .menu-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background: var(--accent-color);
+            border-color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .status-summary {
+            background: var(--bg-color);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .section-title {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            margin: 20px 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .ingredient-list { list-style: none; padding: 0; }
+        .ingredient-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px dashed var(--accent-color);
+        }
+
+        .claim-btn, .action-btn {
+            background-color: var(--accent-color);
+            border: 1px solid var(--primary-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .claim-btn.claimed {
+            background-color: var(--active-color);
+            border-color: #ccc;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .join-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .join-input-group input, .join-input-group select {
+            padding: 8px;
+            border: 1px solid var(--primary-color);
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .join-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .attendees-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag {
+            background: var(--bg-color);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            border: 1px solid var(--accent-color);
+        }
+
+        /* 團購專區專用樣式 */
+        .group-buy-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 20px;
+        }
+
+        /* 進度條 */
+        .progress-container {
+            background: #eee;
+            border-radius: 10px;
+            height: 20px;
+            width: 100%;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background-color: var(--progress-bar);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .group-main {
+            display: flex;
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .order-table th, .order-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--accent-color);
+        }
+
+        .order-table th {
+            background-color: var(--bg-color);
+        }
+
+        @media (max-width: 768px) {
+            .page, .group-main { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="headerTitle">🍽️ BBP 每日食堂</h1>
+        <p style="color: #8c7e74; margin: 5px 0 0 0;">美味料理、好物團購，一手掌握！</p>
+    </header>
+
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchPage('menu')">🍽️ 每日菜單</button>
+        <button class="tab-btn" onclick="switchPage('group')">🛒 團購專區</button>
+    </div>
+
+    <div class="page active" id="menuPage">
+        <div class="panel menu-list" id="menuList"></div>
+        <div class="panel detail-panel" id="detailPanel">
+            <h2 id="dishTitle" style="margin-top:0;">請選擇左側菜單</h2>
+            <div class="status-summary">
+                <span>今日主廚推薦 🌟</span>
+                <span>目前參加人數：<span id="attendeeCount" style="color: #a68c78; font-size: 1.3rem;">0</span> 人</span>
+            </div>
+            <div class="section-title">材料認領區</div>
+            <ul class="ingredient-list" id="ingredientList"></ul>
+            <div class="section-title">誰要點餐（登記參加）</div>
+            <div class="join-input-group">
+                <input type="text" id="nameInput" placeholder="請輸入你的名字...">
+                <button class="join-btn" onclick="addAttendee()">我想吃 +1</button>
+            </div>
+            <div class="attendees-tags" id="attendeesTags"></div>
+        </div>
+    </div>
+
+    <div class="page" id="groupPage">
+        <div class="group-buy-container">
+            <div class="panel">
+                <h2 style="margin-top: 0;" id="groupTitle">🔥 本週熱門團購：日本頂級生食級干貝</h2>
+                <p id="groupGoalText" style="margin: 5px 0;">目前進度：$0 / 目標 $2,000 免運</p>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+
+            <div class="group-main">
+                <div class="panel" style="flex: 1;">
+                    <div class="section-title" style="margin-top:0;">可選購商品</div>
+                    <div id="productList"></div>
+
+                    <div class="section-title">我要跟團 (+1)</div>
+                    <div class="join-input-group" style="flex-direction: column; gap: 10px;">
+                        <input type="text" id="buyerName" placeholder="請輸入你的名字...">
+                        <div style="display: flex; gap: 10px;">
+                            <select id="productSelect" style="flex: 2;"></select>
+                            <input type="number" id="buyQty" value="1" min="1" style="flex: 1; text-align: center;">
+                        </div>
+                        <button class="join-btn" style="width: 100%;" onclick="placeOrder()">確認加入購物車 🛒</button>
+                    </div>
+                </div>
+
+                <div class="panel" style="flex: 1.2;">
+                    <div class="section-title" style="margin-top:0;">當前跟團明細</div>
+                    <table class="order-table">
+                        <thead>
+                            <tr>
+                                <th>團友</th>
+                                <th>商品</th>
+                                <th>數量</th>
+                                <th>小計</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderTableBody"></tbody>
+                    </table>
+                    <div style="text-align: right; margin-top: 15px; font-weight: bold; font-size: 1.1rem;">
+                        總計金額：<span id="totalGroupAmount" style="color: #a68c78; font-size: 1.3rem;">$0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= 菜單資料 =================
+        const menuData = {
+            "day1": {
+                date: "5/18 (一)", dish: "香濃日式咖哩飯",
+                ingredients: [
+                    { name: "好侍咖哩塊", claimedBy: "" },
+                    { name: "台灣梅花豬肉 500g", claimedBy: "小依" },
+                    { name: "馬鈴薯 3顆", claimedBy: "" },
+                    { name: "洋蔥 2顆", claimedBy: "蕉蕉" }
+                ],
+                attendees: ["小依", "蕉蕉", "晴"]
+            },
+            "day2": {
+                date: "5/19 (二)", dish: "泰式打拋豬肉飯",
+                ingredients: [
+                    { name: "豬絞肉 600g", claimedBy: "" },
+                    { name: "新鮮九層塔 一大把", claimedBy: "" },
+                    { name: "辣椒與大蒜", claimedBy: "CC" }
+                ],
+                attendees: ["CC", "舒容"]
+            }
+        };
+
+        // ================= 團購資料 =================
+        const groupData = {
+            title: "🔥 廚房必備食材：鮮甜海鮮與肉品團購",
+            targetAmount: 2000,
+            products: [
+                { id: "p1", name: "生食級大干貝 (10顆/包)", price: 450 },
+                { id: "p2", name: "安格斯黑牛火鍋肉片 (300g)", price: 280 },
+                { id: "p3", name: "小農無毒鮮香菇 (一盒)", price: 90 }
+            ],
+            orders: [
+                { name: "晴", productId: "p1", qty: 1 },
+                { name: "舒容", productId: "p2", qty: 2 },
+                { name: "CC", productId: "p3", qty: 3 }
+            ]
+        };
+
+        let currentDayKey = "day1";
+
+        // ================= 核心分頁切換邏輯 =================
+        function switchPage(pageType) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+
+            if (pageType === 'menu') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('menuPage').classList.add('active');
+                document.getElementById('headerTitle').innerText = "🍽️ BBP 每日食堂";
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('groupPage').classList.add('active');
+                document.getElementById('headerTitle').innerText = "🛒 BBP 食材物資團購站";
+                renderGroupBuy(); // 切換時重新計算渲染團購
+            }
+        }
+
+        // ================= 菜單邏輯程式碼 =================
+        function initMenu() {
+            const menuListEl = document.getElementById("menuList");
+            menuListEl.innerHTML = "";
+            Object.keys(menuData).forEach(key => {
+                const item = menuData[key];
+                const div = document.createElement("div");
+                div.className = `menu-item ${key === currentDayKey ? 'active' : ''}`;
+                div.setAttribute("data-key", key);
+                div.innerHTML = `<div style="font-size:0.85rem; color:#8c7e74;">${item.date}</div><div style="font-size:1.1rem; margin-top:4px;">${item.dish}</div>`;
+                div.onclick = () => switchDay(key);
+                menuListEl.appendChild(div);
+            });
+            switchDay(currentDayKey);
+        }
+
+        function switchDay(key) {
+            currentDayKey = key;
+            document.querySelectorAll(".menu-item").forEach(el => {
+                el.classList.remove("active");
+                if(el.getAttribute("data-key") === key) el.classList.add("active");
+            });
+
+            const data = menuData[key];
+            document.getElementById("dishTitle").innerText = `${data.date} ➔ ${data.dish}`;
+            document.getElementById("attendeeCount").innerText = data.attendees.length;
+
+            const ingredListEl = document.getElementById("ingredientList");
+            ingredListEl.innerHTML = "";
+            data.ingredients.forEach((ing, index) => {
+                const li = document.createElement("li");
+                li.className = "ingredient-item";
+                li.innerHTML = `<span>${ing.name}</span>`;
+                
+                const btn = document.createElement("button");
+                if (ing.claimedBy) {
+                    btn.className = "claim-btn claimed";
+                    btn.innerText = `已由 ${ing.claimedBy} 認領`;
+                    btn.disabled = true;
+                } else {
+                    btn.className = "claim-btn";
+                    btn.innerText = "我有，我帶！";
+                    btn.onclick = () => claimIngredient(index);
+                }
+                li.appendChild(btn);
+                ingredListEl.appendChild(li);
+            });
+
+            const tagsEl = document.getElementById("attendeesTags");
+            tagsEl.innerHTML = "";
+            data.attendees.forEach(person => {
+                tagsEl.innerHTML += `<span class="tag">🙋‍♂️ ${person}</span>`;
+            });
+        }
+
+        function claimIngredient(index) {
+            const userName = prompt("請輸入您的名字以完成認領：");
+            if (!userName || userName.trim() === "") return;
+            menuData[currentDayKey].ingredients[index].claimedBy = userName.trim();
+            if (!menuData[currentDayKey].attendees.includes(userName.trim())) {
+                menuData[currentDayKey].attendees.push(userName.trim());
+            }
+            switchDay(currentDayKey);
+        }
+
+        function addAttendee() {
+            const input = document.getElementById("nameInput");
+            const name = input.value.trim();
+            if (name === "") return alert("請先輸入名字喔！");
+            if (menuData[currentDayKey].attendees.includes(name)) return alert("你已經在名單中囉！");
+            
+            menuData[currentDayKey].attendees.push(name);
+            input.value = "";
+            switchDay(currentDayKey);
+        }
+
+        // ================= 團購邏輯程式碼 =================
+        function renderGroupBuy() {
+            document.getElementById("groupTitle").innerText = groupData.title;
+            
+            // 渲染選購商品清單與下拉選單
+            const prodListEl = document.getElementById("productList");
+            const prodSelectEl = document.getElementById("productSelect");
+            prodListEl.innerHTML = "";
+            prodSelectEl.innerHTML = "";
+
+            groupData.products.forEach(p => {
+                prodListEl.innerHTML += `
+                    <div class="product-card">
+                        <div>
+                            <strong style="font-size:1.05rem;">${p.name}</strong>
+                            <div style="color:#a68c78; margin-top:4px; font-weight:bold;">$${p.price}</div>
+                        </div>
+                    </div>`;
+                prodSelectEl.innerHTML += `<option value="${p.id}">${p.name} ($${p.price})</option>`;
+            });
+
+            // 計算跟團總金額與明細
+            let totalSum = 0;
+            const tableBody = document.getElementById("orderTableBody");
+            tableBody.innerHTML = "";
+
+            groupData.orders.forEach(order => {
+                const product = groupData.products.find(p => p.id === order.productId);
+                if (product) {
+                    const subtotal = product.price * order.qty;
+                    totalSum += subtotal;
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${order.name}</td>
+                            <td>${product.name}</td>
+                            <td>${order.qty}</td>
+                            <td>$${subtotal}</td>
+                        </tr>`;
+                }
+            });
+
+            // 更新總金額與進度條
+            document.getElementById("totalGroupAmount").innerText = `$${totalSum}`;
+            document.getElementById("groupGoalText").innerText = `目前進度：$${totalSum} / 目標 $${groupData.targetAmount} 免運`;
+            
+            let progressPercent = (totalSum / groupData.targetAmount) * 100;
+            if (progressPercent > 100) progressPercent = 100;
+            document.getElementById("progressBar").style.width = `${progressPercent}%`;
+        }
+
+        function placeOrder() {
+            const name = document.getElementById("buyerName").value.trim();
+            const productId = document.getElementById("productSelect").value;
+            const qty = parseInt(document.getElementById("buyQty").value);
+
+            if (name === "") return alert("請輸入您的名字再跟團喔！");
+            if (isNaN(qty) || qty < 1) return alert("請輸入正確的數量！");
+
+            // 檢查是不是同一個人重複買同一件商品，是的話直接累加數量
+            const existingOrder = groupData.orders.find(o => o.name === name && o.productId === productId);
+            if (existingOrder) {
+                existingOrder.qty += qty;
+            } else {
+                groupData.orders.push({ name, productId, qty });
+            }
+
+            document.getElementById("buyerName").value = "";
+            document.getElementById("buyQty").value = "1";
+            renderGroupBuy();
+        }
+
+        // 初始化
+        initMenu();
+    </script>
+</body>
+</html>
