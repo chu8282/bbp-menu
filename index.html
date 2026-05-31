@@ -31,19 +31,23 @@
             const data = snapshot.val();
             if (data) {
                 renderApp(data);
+            } else {
+                document.getElementById('app').innerHTML = "資料庫為空，請檢查節點名稱";
             }
         });
 
-        // 3. 渲染畫面
+        // 3. 渲染邏輯 (把資料變出來)
         function renderApp(data) {
-            document.getElementById('app').innerHTML = `
+            const app = document.getElementById('app');
+            // 這裡會讀取 data 並顯示在網頁上
+            app.innerHTML = `
                 <h2>今日菜單：${data.menu.day1.dish}</h2>
-                <p>參加人數：${data.menu.day1.attendees.length} 人</p>
+                <p>目前參加人數：${data.menu.day1.attendees ? data.menu.day1.attendees.length : 0} 人</p>
                 <button onclick="joinMeal()">我想吃 +1</button>
             `;
         }
 
-        // 4. 多人同步寫入
+        // 4. 加入邏輯
         function joinMeal() {
             const name = prompt("請輸入名字：");
             if (!name) return;
@@ -52,10 +56,8 @@
                 let list = snap.val() || [];
                 if (!list.includes(name)) {
                     list.push(name);
-                    ref.set(list); // 直接更新到雲端，大家都會同步
+                    ref.set(list);
                 }
             });
         }
     </script>
-</body>
-</html>
