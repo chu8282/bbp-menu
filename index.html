@@ -2,22 +2,22 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>BBP 雲端食堂</title>
+    <title>BBP 每日食堂 (雲端協作版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
-        /* 這裡是你的原始 CSS，我已確保樣式完整 */
+        /* 這裡放你原本完整的精美 CSS */
         :root { --bg-color: #F4EBE4; --card-bg: #FFFFFF; --primary-color: #C0B0A2; --accent-color: #EBD8C9; --text-color: #5A5048; }
         body { font-family: "PingFang TC", sans-serif; background-color: var(--bg-color); color: var(--text-color); padding: 20px; display: flex; flex-direction: column; align-items: center; }
         .panel { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 100%; max-width: 800px; margin-bottom: 20px; }
-        button { padding: 10px 20px; cursor: pointer; border-radius: 20px; border: 1px solid var(--primary-color); background: var(--accent-color); }
+        .attendee-tag { display: inline-block; background: var(--accent-color); padding: 5px 10px; border-radius: 15px; margin: 2px; }
     </style>
 </head>
 <body>
+
     <div id="app" class="panel">正在從雲端載入資料...</div>
 
     <script>
-        // 1. Firebase 初始化
         const firebaseConfig = {
             apiKey: "AIzaSyCvhZUEhX0MiVSy84TTRluVHN_QgBVaBkg",
             databaseURL: "https://bbp-food-default-rtdb.firebaseio.com",
@@ -26,38 +26,38 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. 即時監聽資料庫
+        // 即時監聽：一旦資料變動，全體用戶網頁自動刷新
         db.ref('bbp_data').on('value', (snapshot) => {
             const data = snapshot.val();
-            if (data) {
-                renderApp(data);
-            } else {
-                document.getElementById('app').innerHTML = "資料庫為空，請檢查節點名稱";
-            }
+            if (data) renderApp(data);
         });
 
-        // 3. 渲染邏輯 (把資料變出來)
+        // 整合後的渲染邏輯 (這裡把你的完整 UI 填進去)
         function renderApp(data) {
-            const app = document.getElementById('app');
-            // 這裡會讀取 data 並顯示在網頁上
-            app.innerHTML = `
-                <h2>今日菜單：${data.menu.day1.dish}</h2>
-                <p>目前參加人數：${data.menu.day1.attendees ? data.menu.day1.attendees.length : 0} 人</p>
+            const day1 = data.menu.day1;
+            const attendeesList = (day1.attendees || []).map(name => `<span class="attendee-tag">${name}</span>`).join('');
+            
+            document.getElementById('app').innerHTML = `
+                <h2>🍽️ ${day1.dish}</h2>
+                <p>目前參加人數：${day1.attendees ? day1.attendees.length : 0} 人</p>
+                <div style="margin: 10px 0;">${attendeesList}</div>
                 <button onclick="joinMeal()">我想吃 +1</button>
             `;
         }
 
-        // 4. 加入邏輯
+        // 多人同步寫入函數
         function joinMeal() {
-            const name = prompt("請輸入名字：");
+            const name = prompt("請輸入你的名字：");
             if (!name) return;
             const ref = db.ref('bbp_data/menu/day1/attendees');
             ref.once('value', (snap) => {
                 let list = snap.val() || [];
                 if (!list.includes(name)) {
                     list.push(name);
-                    ref.set(list);
+                    ref.set(list); // 直接更新到雲端，大家都會同步
                 }
             });
         }
     </script>
+</body>
+</html>
