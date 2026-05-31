@@ -1,108 +1,64 @@
-# 🍽️ BBP 每日食堂與團購
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>BBP 每日食堂與團購 (雲端協作版)</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <style>
+        /* 保留你原本的 CSS 樣式 */
+        :root { --bg-color: #F4EBE4; --card-bg: #FFFFFF; --primary-color: #C0B0A2; --accent-color: #EBD8C9; --text-color: #5A5048; --active-color: #E6DEDC; --progress-bar: #D9C5B2; }
+        body { font-family: "PingFang TC", sans-serif; background-color: var(--bg-color); padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .panel { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; width: 100%; max-width: 800px; }
+    </style>
+</head>
+<body>
+    <header><h1>🍽️ BBP 雲端食堂</h1></header>
+    <div id="app" class="panel">載入中...</div>
 
-一個功能完整的食堂菜單與團購管理應用，使用純前端技術實現。
+    <script>
+        // 初始化 Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCvhZUEhX0MiVSy84TTRluVHN_QgBVaBkg",
+            authDomain: "bbp-food.firebaseapp.com",
+            databaseURL: "https://bbp-food-default-rtdb.firebaseio.com",
+            projectId: "bbp-food",
+            storageBucket: "bbp-food.firebasestorage.app",
+            messagingSenderId: "596590257801",
+            appId: "1:596590257801:web:9cdcb3fb97acbb849f0858"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-## 功能特色
+        // 即時監聽：一旦 Firebase 資料變動，全體用戶網頁自動刷新
+        db.ref('bbp_data').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                renderApp(data);
+            }
+        });
 
-### 📋 每日菜單
-- **菜單選擇** - 瀏覽每日推薦菜色
-- **材料認領** - 員工可認領食材，避免重複購買
-- **參加登記** - 快速登記用餐人數
-- **實時更新** - 材料認領狀態與參加人數即時顯示
+        // 核心渲染邏輯
+        function renderApp(data) {
+            const app = document.getElementById('app');
+            app.innerHTML = `<h2>今日菜單：${data.menu.day1.dish}</h2>
+                             <p>參加人數：${data.menu.day1.attendees.length} 人</p>
+                             <button onclick="joinMeal()">我想吃 +1</button>`;
+        }
 
-### 🛒 團購專區
-- **商品展示** - 清晰展示可購商品與價格
-- **進度追蹤** - 視覺化進度條顯示團購目標達成進度
-- **購物車管理** - 支持批量購買與自動合併同商品訂單
-- **明細統計** - 實時計算團購總金額
-
-## 設計特色
-
-✨ **奶茶色系配色** - 溫暖舒適的視覺設計
-📱 **響應式設計** - 完美支持桌面端和移動設備
-🎨 **直覺化界面** - 清晰的信息層次與交互流程
-
-## 快速開始
-
-1. **本地預覽**
-   - 直接在瀏覽器中打開 `index.html` 文件
-
-2. **GitHub Pages 部署**
-   - 倉庫已啟用 GitHub Pages
-   - 訪問: https://chu8282.github.io/bbp-menu
-
-## 使用說明
-
-### 每日菜單頁面
-1. 左側選擇要查看的菜色
-2. 點擊 「我有，我帶！」 認領所需材料
-3. 在下方輸入名字並點擊 「我想吃 +1」 登記用餐人數
-
-### 團購專區
-1. 在左側選擇商品與數量
-2. 輸入名字並點擊 「確認加入購物車」
-3. 右側實時顯示團購明細與進度
-
-## 數據結構
-
-### 菜單數據
-```javascript
-{
-  date: "日期",
-  dish: "菜色名稱",
-  ingredients: [
-    { name: "食材名稱", claimedBy: "認領人名字" }
-  ],
-  attendees: ["參加人員列表"]
-}
-```
-
-### 團購數據
-```javascript
-{
-  title: "團購標題",
-  targetAmount: 目標金額,
-  products: [
-    { id: "商品ID", name: "商品名稱", price: 價格 }
-  ],
-  orders: [
-    { name: "購買人", productId: "商品ID", qty: 數量 }
-  ]
-}
-```
-
-## 技術棧
-
-- HTML5
-- CSS3 (變數、Flexbox、響應式設計)
-- Vanilla JavaScript (無框架依賴)
-
-## 自定義數據
-
-編輯 `index.html` 中的 JavaScript 部分：
-
-```javascript
-const menuData = { /* 修改菜單信息 */ };
-const groupData = { /* 修改團購信息 */ };
-```
-
-## 瀏覽器支持
-
-✅ Chrome/Edge 最新版本
-✅ Firefox 最新版本
-✅ Safari 最新版本
-✅ 現代移動瀏覽器
-
-## 未來功能
-
-- [ ] 數據持久化 (LocalStorage/後端)
-- [ ] 用戶認證系統
-- [ ] 訂單導出功能
-- [ ] 通知提醒
-- [ ] 多語言支持
-
----
-
-**作者**: chu8282  
-**許可證**: MIT  
-**更新時間**: 2026-05-31
+        // 雲端寫入邏輯
+        function joinMeal() {
+            const name = prompt("請輸入你的名字：");
+            if (!name) return;
+            const ref = db.ref('bbp_data/menu/day1/attendees');
+            ref.once('value', (snap) => {
+                let list = snap.val() || [];
+                if (!list.includes(name)) {
+                    list.push(name);
+                    ref.set(list); // 直接存入雲端，所有人會同步看到
+                }
+            });
+        }
+    </script>
+</body>
+</html>
